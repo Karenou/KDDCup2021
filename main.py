@@ -109,9 +109,34 @@ class AnomalyDetection:
         result_df = result_df[~result_df["confidence"].isna()].sort_values(["confidence"], ascending=False)
         result_df.to_csv("./results/%s.csv" % self.file_id, header=True, index=True)
 
+        # plot_anomaly
+        self.plot_anomaly(data, result_df, point)
+
+    def plot_anomaly(self, data: pd.DataFrame, result_df: pd.DataFrame, split_point: int) -> None:
+        """
+        plot the anomaly point against the whole time series data
+        @param data: whole time series
+        @param result_df: store the confidence, idx of peak, and peak values
+        @param split_point: point to split the train and test set
+        """
+        plt.figure(figsize=(20,4))
+        plt.plot(np.arange(len(data)), data["orig"])
+
+        a = np.array(result_df[result_df["confidence"] == result_df["confidence"].max()]["idx"])
+        a.sort()
+        plt.axvline(x=split_point, ls=":", label="train test split at %d" % split_point, c = "b")
+        plt.legend()
+        plt.plot(a, data.loc[a, "orig"],'o')
+        plt.title("%s - Anomaly Point" % (self.file_id))
+
+        plt.savefig("./picture/%s_anomaly.jpg" % (self.file_id))
+        # plt.show()
+
+
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
 
-for file_id in sorted(list(file_paths.keys()))[:10]:
-    model = AnomalyDetection(file_paths, file_id)
-    model.get_score_func()
+# try a few short file_id first, may take quite a long time for the one ones
+# for file_id in sorted(list(file_paths.keys()))[:10]:
+model = AnomalyDetection(file_paths, "007")
+model.get_score_func()
