@@ -135,8 +135,8 @@ class AnomalyDetection:
 
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
-
-# try a few short file_id first, may take quite a long time for the one ones
-# for file_id in sorted(list(file_paths.keys()))[:10]:
+file_ids = sorted(list(file_paths.keys()))
+# try a few short file_id first, may take quite a long time for the long ones
+# for file_id in file_ids:
 model = AnomalyDetection(file_paths, "007")
 model.get_score_func()
