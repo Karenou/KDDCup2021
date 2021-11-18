@@ -167,7 +167,7 @@ def orig_mp_outlier(arr: pd.DataFrame, ws: int, split_point: int) -> tuple:
     @param split_point: point to split the train and test set
     """
     # (distance, neighbor_idx, , )
-    mp = stumpy.stump(arr["orig"], ws)
+    mp = stumpy.gpu_stump(arr["orig"], ws)
     mp_smooth = smoothing(mp[:, 0], ws)
     conf, idx, peak = compute_confidence_score(mp_smooth, ws, split_point)
     return conf, idx, peak
@@ -181,7 +181,7 @@ def orig_mp_novelty(train: pd.DataFrame, test: pd.DataFrame, arr: pd.DataFrame, 
     @param w: window size
     @param split_point: split point to separate train and test set
     """
-    ab_mp = stumpy.stump(T_A = test["orig"], m = ws, T_B = train["orig"], ignore_trivial = False)
+    ab_mp = stumpy.gpu_stump(T_A = test["orig"], m = ws, T_B = train["orig"], ignore_trivial = False)
     begin = split_point
     end = begin + len(ab_mp) - 1
     arr.loc[begin:end, "mp_novelty"] = ab_mp[:,0]
