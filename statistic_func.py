@@ -66,7 +66,6 @@ def compute_confidence_score(s: pd.DataFrame, ws: int, split_point: int) -> tupl
     return the ratio of first peak and second peak
     """
     y = s.copy()
-    # y = s["%s_score" % name].copy()
     
     # find local maximum
     local_max = (y == y.rolling(window=ws).max())
