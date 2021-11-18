@@ -122,21 +122,22 @@ class AnomalyDetection:
         plt.figure(figsize=(20,4))
         plt.plot(np.arange(len(data)), data["orig"])
 
-        a = np.array(result_df[result_df["confidence"] == result_df["confidence"].max()]["idx"])
-        a.sort()
+        anomaly_point = result_df["idx"][0]
+
         plt.axvline(x=split_point, ls=":", label="train test split at %d" % split_point, c = "b")
         plt.legend()
-        plt.plot(a, data.loc[a, "orig"],'o')
+        plt.plot(anomaly_point, data.loc[anomaly_point, "orig"],'o')
         plt.title("%s - Anomaly Point" % (self.file_id))
 
         plt.savefig("./picture/%s_anomaly.jpg" % (self.file_id))
+        plt.close()
         # plt.show()
 
 
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
 file_ids = sorted(list(file_paths.keys()))
-# try a few short file_id first, may take quite a long time for the long ones
-# for file_id in file_ids:
-model = AnomalyDetection(file_paths, "007")
-model.get_score_func()
+
+for file_id in file_ids:
+    model = AnomalyDetection(file_paths, file_ids)
+    model.get_score_func()
