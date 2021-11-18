@@ -1,6 +1,7 @@
 import glob
 import pandas as pd
 import numpy as np
+import os
 
 from utils import auto_period_finder
 from statistic_func import *
@@ -107,6 +108,9 @@ class AnomalyDetection:
         # save results
         result_df = pd.DataFrame.from_dict(results, orient="index")
         result_df = result_df[~result_df["confidence"].isna()].sort_values(["confidence"], ascending=False)
+        
+        if not os.path.exists("./results"):
+            os.makedirs("./results")
         result_df.to_csv("./results/%s.csv" % self.file_id, header=True, index=True)
 
         # plot_anomaly
@@ -129,6 +133,8 @@ class AnomalyDetection:
         plt.plot(anomaly_point, data.loc[anomaly_point, "orig"],'o')
         plt.title("%s - Anomaly Point" % (self.file_id))
 
+        if not os.path.exists("./picture"):
+            os.makedirs("./picture")
         plt.savefig("./picture/%s_anomaly.jpg" % (self.file_id))
         plt.close()
         # plt.show()
