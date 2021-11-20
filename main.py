@@ -37,8 +37,9 @@ class AnomalyDetection:
         file_path = self.file_paths[self.file_id]
         # the format of these files are different
         if self.file_id in ["204","205", "206", "207", "208", "225","226", "242", "243"]:
-            data = pd.read_csv(file_path, sep="\s+", header=None, names=["orig"])
+            data = pd.read_csv(file_path, sep="\s+", header=None)
             data = data.T
+            data.columns = ["orig"]
         else:
             data = pd.read_csv(file_path, sep=",", header=None, names=["orig"])
 
