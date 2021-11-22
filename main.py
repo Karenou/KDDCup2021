@@ -63,13 +63,13 @@ class AnomalyDetection:
         """
         print("loading data for file_id = %s" % self.file_id)
         data, train, test, point = self.load_data()
-        data["diff"] = data["orig"].diff(1)
-        data["acc"] = data["diff"].diff(1)
+        data["diff"] = data["orig"].diff(1).fillna(method="bfill")
+        data["acc"] = data["diff"].diff(1).fillna(method="bfill")
         results = {}
 
         for ws in self.candidates_ws:
         
-            # print("applying fourier transformation")
+            # applying fourier transformation
             low_fft_score, high_fft_score = fourier_transform(data, ws, point)
             conf, idx, peak = compute_confidence_score(low_fft_score, ws, point)
             results = self.append_result(results, "low_fft", ws, conf, idx, peak)
@@ -77,7 +77,17 @@ class AnomalyDetection:
             conf, idx, peak = compute_confidence_score(high_fft_score, ws, point)
             results = self.append_result(results, "high_fft", ws, conf, idx, peak)
 
-            # print("computing score functions")
+            # apply spetral residual
+            conf, idx, peak = spectral_residual(data, "orig", ws, point)
+            results = self.append_result(results, "sr_orig", ws, conf, idx, peak)
+
+            conf, idx, peak = spectral_residual(data, "diff", ws, point)
+            results = self.append_result(results, "sr_diff", ws, conf, idx, peak)
+
+            conf, idx, peak = spectral_residual(data, "acc", ws, point)
+            results = self.append_result(results, "sr_acc", ws, conf, idx, peak)
+
+            # computing score functions
             conf, idx, peak, orig_p2p_s = peak_to_peak_value(data, "orig", ws, point)
             results = self.append_result(results, "orig_p2p", ws, conf, idx, peak) 
             
