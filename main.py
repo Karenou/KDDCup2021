@@ -6,7 +6,7 @@ import os
 
 from fourier_transform import fourier_transform
 from spectral_residual import spectral_residual
-from rrcf import robust_random_cur_forrest
+from rrcf import robust_random_cut_forrest
 from matrix_profile import orig_mp_novelty, orig_mp_outlier
 from statistic_func import *
 
@@ -73,6 +73,10 @@ class AnomalyDetection:
         data["acc"] = data["diff"].diff(1).fillna(method="bfill")
         results = {}
 
+        # grid search for hyperparameter for rrcf
+        num_trees = [20, 40, 60]
+        tree_sizes = [64, 128, 256]
+
         for ws in self.candidates_ws:
         
             # applying fourier transformation
@@ -94,14 +98,16 @@ class AnomalyDetection:
             results = self.append_result(results, "sr_acc", ws, conf, idx, peak)
 
             # apply rrcf
-            conf, idx, peak = robust_random_cur_forrest(data, "orig", ws, point)
-            results = self.append_result(results, "rrcf_orig", ws, conf, idx, peak)
+            for num_tree in num_trees:
+                for tree_size in tree_sizes:
+                    conf, idx, peak = robust_random_cut_forrest(data, "orig", ws, point, num_tree, tree_size)
+                    results = self.append_result(results, "rrcf_orig_%d_%d" % (num_tree, tree_size), ws, conf, idx, peak)
 
-            conf, idx, peak = robust_random_cur_forrest(data, "diff", ws, point)
-            results = self.append_result(results, "rrcf_diff", ws, conf, idx, peak)
+                    conf, idx, peak = robust_random_cut_forrest(data, "diff", ws, point, num_tree, tree_size)
+                    results = self.append_result(results, "rrcf_diff_%d_%d" % (num_tree, tree_size), ws, conf, idx, peak)
 
-            conf, idx, peak = robust_random_cur_forrest(data, "acc", ws, point)
-            results = self.append_result(results, "rrcf_acc", ws, conf, idx, peak)
+                    conf, idx, peak = robust_random_cut_forrest(data, "acc", ws, point, num_tree, tree_size)
+                    results = self.append_result(results, "rrcf_acc_%d_%d" % (num_tree, tree_size), ws, conf, idx, peak)
 
             # apply statistic function
             conf, idx, peak, orig_p2p_s = peak_to_peak_value(data, "orig", ws, point)

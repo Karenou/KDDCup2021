@@ -2,14 +2,13 @@ import pandas as pd
 import rrcf
 from util import smoothing, compute_confidence_score
 
-def robust_random_cur_forrest(arr: pd.DataFrame, name: str, ws: int, split_point: int) -> tuple:
+def robust_random_cut_forrest(arr: pd.DataFrame, name: str, ws: int, split_point: int,
+                            num_trees: int, tree_size: int) -> tuple:
     
     #use rrcf method to find the anomaly
     print("for rrcf computing....")
     shingle_size = ws
 
-    num_trees = 40
-    tree_size = 256
     data_list=list(arr[name].values)
     forest = []
     for _ in range(num_trees):
