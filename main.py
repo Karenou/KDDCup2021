@@ -2,8 +2,10 @@ import glob
 import pandas as pd
 import numpy as np
 import os
-
-from utils import auto_period_finder
+from fourier_transform import fourier_transform
+from spectral_residual import spectral_residual
+from rrcf import robust_random_cur_forrest
+from matrix_profile import orig_mp_novelty, orig_mp_outlier
 from statistic_func import *
 
 class AnomalyDetection:
@@ -87,7 +89,17 @@ class AnomalyDetection:
             conf, idx, peak = spectral_residual(data, "acc", ws, point)
             results = self.append_result(results, "sr_acc", ws, conf, idx, peak)
 
-            # computing score functions
+            # apply rrcf
+            conf, idx, peak = robust_random_cur_forrest(data, "orig", ws, point)
+            results = self.append_result(results, "rrcf_orig", ws, conf, idx, peak)
+
+            conf, idx, peak = robust_random_cur_forrest(data, "diff", ws, point)
+            results = self.append_result(results, "rrcf_diff", ws, conf, idx, peak)
+
+            conf, idx, peak = robust_random_cur_forrest(data, "acc", ws, point)
+            results = self.append_result(results, "rrcf_acc", ws, conf, idx, peak)
+
+            # apply statistic function
             conf, idx, peak, orig_p2p_s = peak_to_peak_value(data, "orig", ws, point)
             results = self.append_result(results, "orig_p2p", ws, conf, idx, peak) 
             
@@ -109,7 +121,7 @@ class AnomalyDetection:
             conf, idx, peak = inverse(acc_std, ws, point)  
             results = self.append_result(results, "acc_std_inv", ws, conf, idx, peak) 
 
-            # print("computing matrix profile")
+            # apply computing matrix profile
             conf, idx, peak = orig_mp_outlier(data, ws, point)
             results = self.append_result(results, "orig_mp_outlier", ws, conf, idx, peak) 
 
@@ -120,12 +132,12 @@ class AnomalyDetection:
         result_df = pd.DataFrame.from_dict(results, orient="index")
         result_df = result_df[~result_df["confidence"].isna()].sort_values(["confidence"], ascending=False)
         
-        if not os.path.exists("./results"):
-            os.makedirs("./results")
-        result_df.to_csv("./results/%s.csv" % self.file_id, header=True, index=True)
+        if not os.path.exists("./ensemble_results"):
+            os.makedirs("./ensemble_results")
+        result_df.to_csv("./ensemble_results/%s.csv" % self.file_id, header=True, index=True)
 
         # plot_anomaly
-        self.plot_anomaly(data, result_df, point)
+        # self.plot_anomaly(data, result_df, point)
 
     def plot_anomaly(self, data: pd.DataFrame, result_df: pd.DataFrame, split_point: int) -> None:
         """
@@ -149,12 +161,44 @@ class AnomalyDetection:
         plt.savefig("./picture/%s_anomaly.jpg" % (self.file_id))
         plt.close()
         # plt.show()
+    
+    def ensemble(self):
+        """
+        ensemble different methods
+        """
+        sr_result = pd.read_csv("./sr_results/%s.csv" % self.file_id)
+        other_result = pd.read_csv("./results/%s.csv" % self.file_id)
+        agg_result = pd.concat([sr_result, other_result], axis=0, join="outer")
+        agg_result = agg_result.sort_values(["confidence"], ascending=False)
+        agg_result.to_csv("./ensemble_results/%s.csv" % self.file_id, header=True, index=False)
+
+    def generate_final_submission(self, base_path):
+        """
+        generate final submission file, format: No. ; Location of Anomaly
+        @param base_path: path to save the ensemble results
+        """
+        results = {}
+
+        files = glob.glob(base_path + "/*")
+        for f in files:
+            file_id = int(f.split("/")[-1].split(".")[0])
+            df = pd.read_csv(f)
+            df = df.sort_values(["confidence"], ascending=False)
+            results[file_id] = {"No.": file_id, "Location of Anomaly": int(df["idx"][0])}
+        
+        result_df = pd.DataFrame.from_dict(results, orient="index")
+        result_df = result_df.sort_values(["No."])
+        result_df.to_csv("submission.csv", index=False, header=True)
 
 
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
 file_ids = sorted(list(file_paths.keys()))
 
-for file_id in file_ids:
-    model = AnomalyDetection(file_paths, file_ids)
-    model.get_score_func()
+for file_id in file_ids[111:]:
+    model = AnomalyDetection(file_paths, file_id)
+    model.ensemble()
+    # model.get_score_func()
+
+model = AnomalyDetection(file_paths, "001")
+model.generate_final_submission("./ensemble_results")
