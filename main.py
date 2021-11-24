@@ -1,12 +1,16 @@
 import glob
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
+
 from fourier_transform import fourier_transform
 from spectral_residual import spectral_residual
 from rrcf import robust_random_cur_forrest
 from matrix_profile import orig_mp_novelty, orig_mp_outlier
 from statistic_func import *
+
+from util import plot_anomaly, generate_final_submission
 
 class AnomalyDetection:
 
@@ -136,69 +140,14 @@ class AnomalyDetection:
             os.makedirs("./ensemble_results")
         result_df.to_csv("./ensemble_results/%s.csv" % self.file_id, header=True, index=True)
 
-        # plot_anomaly
-        # self.plot_anomaly(data, result_df, point)
-
-    def plot_anomaly(self, data: pd.DataFrame, result_df: pd.DataFrame, split_point: int) -> None:
-        """
-        plot the anomaly point against the whole time series data
-        @param data: whole time series
-        @param result_df: store the confidence, idx of peak, and peak values
-        @param split_point: point to split the train and test set
-        """
-        plt.figure(figsize=(20,4))
-        plt.plot(np.arange(len(data)), data["orig"])
-
-        anomaly_point = result_df["idx"][0]
-
-        plt.axvline(x=split_point, ls=":", label="train test split at %d" % split_point, c = "b")
-        plt.legend()
-        plt.plot(anomaly_point, data.loc[anomaly_point, "orig"],'o')
-        plt.title("%s - Anomaly Point" % (self.file_id))
-
-        if not os.path.exists("./picture"):
-            os.makedirs("./picture")
-        plt.savefig("./picture/%s_anomaly.jpg" % (self.file_id))
-        plt.close()
-        # plt.show()
-    
-    def ensemble(self):
-        """
-        ensemble different methods
-        """
-        sr_result = pd.read_csv("./sr_results/%s.csv" % self.file_id)
-        other_result = pd.read_csv("./results/%s.csv" % self.file_id)
-        agg_result = pd.concat([sr_result, other_result], axis=0, join="outer")
-        agg_result = agg_result.sort_values(["confidence"], ascending=False)
-        agg_result.to_csv("./ensemble_results/%s.csv" % self.file_id, header=True, index=False)
-
-    def generate_final_submission(self, base_path):
-        """
-        generate final submission file, format: No. ; Location of Anomaly
-        @param base_path: path to save the ensemble results
-        """
-        results = {}
-
-        files = glob.glob(base_path + "/*")
-        for f in files:
-            file_id = int(f.split("/")[-1].split(".")[0])
-            df = pd.read_csv(f)
-            df = df.sort_values(["confidence"], ascending=False)
-            results[file_id] = {"No.": file_id, "Location of Anomaly": int(df["idx"][0])}
-        
-        result_df = pd.DataFrame.from_dict(results, orient="index")
-        result_df = result_df.sort_values(["No."])
-        result_df.to_csv("submission.csv", index=False, header=True)
-
+        # plot_anomaly(self.file_id, data, result_df, point)
 
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
 file_ids = sorted(list(file_paths.keys()))
 
-for file_id in file_ids[111:]:
+for file_id in file_ids:
     model = AnomalyDetection(file_paths, file_id)
-    model.ensemble()
-    # model.get_score_func()
+    model.get_score_func()
 
-model = AnomalyDetection(file_paths, "001")
-model.generate_final_submission("./ensemble_results")
+generate_final_submission("./ensemble_results", "submission.csv")
