@@ -62,10 +62,10 @@ class AnomalyDetection:
         results[f'ws={ws}, {name}'] = {"confidence": conf, "idx": idx, "peak": peak}
         return results
 
-    def get_score_func(self):
+    def get_score_func(self, plot=False):
         """
         compute the score functions of different statistical measures
-        @param window size
+        @param plot: whether to plot the anomaly picture
         """
         print("loading data for file_id = %s" % self.file_id)
         data, train, test, point = self.load_data()
@@ -80,7 +80,7 @@ class AnomalyDetection:
         for ws in self.candidates_ws:
         
             # applying fourier transformation
-            low_fft_score, high_fft_score = fourier_transform(data, ws, point)
+            low_fft_score, high_fft_score = fourier_transform(data, ws)
             conf, idx, peak = compute_confidence_score(low_fft_score, ws, point)
             results = self.append_result(results, "low_fft", ws, conf, idx, peak)
 
@@ -146,7 +146,8 @@ class AnomalyDetection:
             os.makedirs("./ensemble_results")
         result_df.to_csv("./ensemble_results/%s.csv" % self.file_id, header=True, index=True)
 
-        # plot_anomaly(self.file_id, data, result_df, point)
+        if plot:
+            plot_anomaly(self.file_id, data, result_df, point)
 
 base_path = "./data-sets/KDD-Cup/data/*"
 file_paths = {p.split("data/")[1].split("_")[0] : p  for p in glob.glob(base_path)}
@@ -154,6 +155,6 @@ file_ids = sorted(list(file_paths.keys()))
 
 for file_id in file_ids:
     model = AnomalyDetection(file_paths, file_id)
-    model.get_score_func()
+    model.get_score_func(plot=False)
 
 generate_final_submission("./ensemble_results", "submission.csv")

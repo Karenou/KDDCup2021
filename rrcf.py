@@ -1,5 +1,5 @@
 import pandas as pd
-import rrcf
+from rrcf_src import RCTree, shingle
 from util import smoothing, compute_confidence_score
 
 def robust_random_cut_forrest(arr: pd.DataFrame, name: str, ws: int, split_point: int,
@@ -12,11 +12,11 @@ def robust_random_cut_forrest(arr: pd.DataFrame, name: str, ws: int, split_point
     data_list=list(arr[name].values)
     forest = []
     for _ in range(num_trees):
-        tree = rrcf.RCTree()
+        tree = RCTree()
         forest.append(tree)
         
     # Use the "shingle" generator to create rolling window
-    points = rrcf.shingle(data_list, size=shingle_size)
+    points = shingle(data_list, size=shingle_size)
     
     # Create a dict to store anomaly score of each point
     avg_codisp = {}
