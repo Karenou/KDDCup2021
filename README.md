@@ -14,7 +14,7 @@ We ensemble several methods for anomaly detection, including statistical methods
 
 To run the program, use the following command 
 ```
-python3 main.py
+bash ./run.sh
 ```
 
 It may take a few days due to the significant resources required to compute the matrix profile, although we use a 6-core GPU. 
