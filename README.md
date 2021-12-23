@@ -20,3 +20,7 @@ bash ./run.sh
 It may take a few days due to the significant resources required to compute the matrix profile, although we use a 6-core GPU. 
 
 The ensembled results are saved in ensemble_results folder. We take the index with the largest confidence score to be the final detected anomaly location. The final result is in submission.csv
+
+## References
+- [Time Series Anomaly Detection](https://www.youtube.com/watch?v=1v64_tzJPTE)
+- [Multi-dataset Time Series Anomaly Detection](https://www.youtube.com/watch?v=J_Ebbql9jCo)
